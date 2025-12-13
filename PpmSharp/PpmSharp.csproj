@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <PublishAot>true</PublishAot>
+        <InvariantGlobalization>true</InvariantGlobalization>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="OpenTK" Version="4.9.4" />
+      <PackageReference Include="SixLabors.ImageSharp" Version="3.1.12" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <AdditionalFiles Include="/home/neo/RiderProjects/PpmSharp/PpmSharp/Shaders/texture.vert" />
+        <AdditionalFiles Include="/home/neo/RiderProjects/PpmSharp/PpmSharp/Shaders/texture.frag" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference   OutputItemType="Analyzer"    ReferenceOutputAssembly="false" Include="..\PpmSharp.ShaderGen\PpmSharp.ShaderGen.csproj" />
+    </ItemGroup>
+
+</Project>
