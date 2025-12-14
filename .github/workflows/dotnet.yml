@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 env:
-  DOTNET_VERSION: '10.0.x'
+  DOTNET_VERSION: '9.0.x'
 
 jobs:
   build:
@@ -31,7 +31,7 @@ jobs:
             artifact: ppmsharp-win-x64
             archive: zip
           - name: macOS x64
-            os: macos-latest
+            os: macos-13
             rid: osx-x64
             artifact: ppmsharp-osx-x64
             archive: tar.gz
@@ -73,10 +73,10 @@ jobs:
           -c Release \
           -r ${{ matrix.rid }} \
           -o publish \
+          --self-contained \
           /p:Version=${{ steps.version.outputs.VERSION }} \
           /p:PublishSingleFile=true \
-          /p:PublishTrimmed=true \
-          /p:PublishAot=true
+          /p:PublishTrimmed=true
       shell: bash
 
     - name: Prepare artifact (Unix)
