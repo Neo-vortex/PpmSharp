@@ -15,8 +15,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <AdditionalFiles Include="/home/neo/RiderProjects/PpmSharp/PpmSharp/Shaders/texture.vert" />
-        <AdditionalFiles Include="/home/neo/RiderProjects/PpmSharp/PpmSharp/Shaders/texture.frag" />
+        <AdditionalFiles Include="./Shaders/texture.vert" />
+        <AdditionalFiles Include="./Shaders/texture.frag" />
     </ItemGroup>
 
     <ItemGroup>
