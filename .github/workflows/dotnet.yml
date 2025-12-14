@@ -25,11 +25,6 @@ jobs:
             rid: linux-x64
             artifact: ppmsharp-linux-x64
             archive: tar.gz
-          - name: Windows x64
-            os: windows-latest
-            rid: win-x64
-            artifact: ppmsharp-win-x64
-            archive: zip
           - name: macOS x64
             os: macos-13
             rid: osx-x64
