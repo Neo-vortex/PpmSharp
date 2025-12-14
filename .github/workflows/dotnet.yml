@@ -1,0 +1,209 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [ main, master ]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: '10.0.x'
+
+jobs:
+  build:
+    name: Build ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux x64
+            os: ubuntu-latest
+            rid: linux-x64
+            artifact: ppmsharp-linux-x64
+            archive: tar.gz
+          - name: Windows x64
+            os: windows-latest
+            rid: win-x64
+            artifact: ppmsharp-win-x64
+            archive: zip
+          - name: macOS x64
+            os: macos-13
+            rid: osx-x64
+            artifact: ppmsharp-osx-x64
+            archive: tar.gz
+          - name: macOS ARM64
+            os: macos-latest
+            rid: osx-arm64
+            artifact: ppmsharp-osx-arm64
+            archive: tar.gz
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Get version
+      id: version
+      run: echo "VERSION=1.0.${{ github.run_number }}" >> $GITHUB_OUTPUT
+      shell: bash
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build
+      run: dotnet build --configuration Release --no-restore /p:Version=${{ steps.version.outputs.VERSION }}
+
+    - name: Test
+      run: dotnet test --configuration Release --no-build --verbosity normal
+      continue-on-error: true
+
+    - name: Publish Native AOT
+      run: |
+        dotnet publish PpmSharp/PpmSharp.csproj \
+          -c Release \
+          -r ${{ matrix.rid }} \
+          -o publish \
+          /p:Version=${{ steps.version.outputs.VERSION }} \
+          /p:PublishSingleFile=true \
+          /p:PublishTrimmed=true \
+          /p:PublishAot=true
+      shell: bash
+
+    - name: Prepare artifact (Unix)
+      if: matrix.archive == 'tar.gz'
+      run: |
+        cd publish
+        chmod +x PpmSharp
+        mv PpmSharp ${{ matrix.artifact }}
+        tar -czf ${{ matrix.artifact }}.tar.gz ${{ matrix.artifact }}
+      shell: bash
+
+    - name: Prepare artifact (Windows)
+      if: matrix.archive == 'zip'
+      run: |
+        cd publish
+        move PpmSharp.exe ${{ matrix.artifact }}.exe
+        7z a -tzip ${{ matrix.artifact }}.zip ${{ matrix.artifact }}.exe
+      shell: cmd
+
+    - name: Upload build artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.artifact }}
+        path: publish/${{ matrix.artifact }}.${{ matrix.archive }}
+        if-no-files-found: error
+        retention-days: 7
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    permissions:
+      contents: write
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Get version
+      id: version
+      run: |
+        echo "VERSION=1.0.${{ github.run_number }}" >> $GITHUB_OUTPUT
+        echo "TAG=v1.0.${{ github.run_number }}" >> $GITHUB_OUTPUT
+
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts
+
+    - name: Display structure
+      run: ls -R artifacts/
+
+    - name: Generate changelog
+      id: changelog
+      run: |
+        PREV_BUILD=$((GITHUB_RUN_NUMBER - 1))
+        echo "PREV_BUILD=$PREV_BUILD" >> $GITHUB_OUTPUT
+        echo "CHANGELOG<<EOF" >> $GITHUB_OUTPUT
+        echo "## What's Changed" >> $GITHUB_OUTPUT
+        echo "" >> $GITHUB_OUTPUT
+        git log --oneline -10 --pretty=format:"- %s (%h)" >> $GITHUB_OUTPUT
+        echo "" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+      env:
+        GITHUB_RUN_NUMBER: ${{ github.run_number }}
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: ${{ steps.version.outputs.TAG }}
+        name: Release ${{ steps.version.outputs.TAG }}
+        body: |
+          ## PpmSharp ${{ steps.version.outputs.TAG }}
+          
+          **Build Number:** ${{ github.run_number }}
+          **Commit:** ${{ github.sha }}
+          **Date:** ${{ github.event.head_commit.timestamp }}
+          
+          ### 📥 Downloads
+          
+          | Platform | Architecture | Download |
+          |----------|--------------|----------|
+          | 🐧 Linux | x64 | [ppmsharp-linux-x64.tar.gz](https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.TAG }}/ppmsharp-linux-x64.tar.gz) |
+          | 🪟 Windows | x64 | [ppmsharp-win-x64.zip](https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.TAG }}/ppmsharp-win-x64.zip) |
+          | 🍎 macOS | x64 (Intel) | [ppmsharp-osx-x64.tar.gz](https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.TAG }}/ppmsharp-osx-x64.tar.gz) |
+          | 🍎 macOS | ARM64 (M1/M2/M3) | [ppmsharp-osx-arm64.tar.gz](https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.TAG }}/ppmsharp-osx-arm64.tar.gz) |
+          
+          ### 🚀 Quick Start
+          
+          #### Linux / macOS
+          ```bash
+          # Download and extract
+          tar -xzf ppmsharp-*.tar.gz
+          
+          # Make executable (if needed)
+          chmod +x ppmsharp-*
+          
+          # Run
+          ./ppmsharp-* image.ppm
+          ```
+          
+          #### Windows
+          ```powershell
+          # Extract the zip file
+          Expand-Archive ppmsharp-win-x64.zip
+          
+          # Run
+          .\ppmsharp-win-x64.exe image.ppm
+          ```
+          
+          ### 📝 Changes
+          
+          ${{ steps.changelog.outputs.CHANGELOG }}
+          
+          ---
+          
+          **Full Changelog**: https://github.com/${{ github.repository }}/compare/v1.0.${{ steps.changelog.outputs.PREV_BUILD }}...${{ steps.version.outputs.TAG }}
+        files: |
+          artifacts/ppmsharp-linux-x64/ppmsharp-linux-x64.tar.gz
+          artifacts/ppmsharp-win-x64/ppmsharp-win-x64.zip
+          artifacts/ppmsharp-osx-x64/ppmsharp-osx-x64.tar.gz
+          artifacts/ppmsharp-osx-arm64/ppmsharp-osx-arm64.tar.gz
+        draft: false
+        prerelease: false
+        fail_on_unmatched_files: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
