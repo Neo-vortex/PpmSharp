@@ -4,6 +4,7 @@ PpmSharp is Lightweight, GPU-accelerated PPM image viewer and converter in C#, f
 
 This project was built as a learning exercise to explore OpenGL programming in C# and the ppm image format. While production image viewers might use rendering engines like Skia (via SkiaSharp in c#), this implementation uses raw OpenGL to understand the fundamentals of GPU-accelerated graphics, shader programming, and efficient texture handling. The performance comparison with Skia-based implementations would be interesting to explore!
 
+[![.github/workflows/dotnet.yml](https://github.com/Neo-vortex/PpmSharp/actions/workflows/dotnet.yml/badge.svg)](https://github.com/Neo-vortex/PpmSharp/actions/workflows/dotnet.yml)
 ## Features
 
 - 🖼️ **Fast PPM P3 Viewer** - Hardware-accelerated OpenGL rendering
