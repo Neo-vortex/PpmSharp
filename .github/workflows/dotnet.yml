@@ -25,8 +25,13 @@ jobs:
             rid: linux-x64
             artifact: ppmsharp-linux-x64
             archive: tar.gz
+          - name: Windows x64
+            os: windows-latest
+            rid: win-x64
+            artifact: ppmsharp-win-x64
+            archive: zip
           - name: macOS x64
-            os: macos-latest
+            os: macos-13
             rid: osx-x64
             artifact: ppmsharp-osx-x64
             archive: tar.gz
@@ -78,9 +83,14 @@ jobs:
       if: matrix.archive == 'tar.gz'
       run: |
         cd publish
+        # List all files to see what we have
+        ls -la
+        # Make executable
         chmod +x PpmSharp
+        # Rename main executable
         mv PpmSharp ${{ matrix.artifact }}
-        tar -czf ${{ matrix.artifact }}.tar.gz ${{ matrix.artifact }}
+        # Create archive with all files (executable + native dependencies)
+        tar -czf ${{ matrix.artifact }}.tar.gz *
       shell: bash
 
     - name: Upload build artifact
