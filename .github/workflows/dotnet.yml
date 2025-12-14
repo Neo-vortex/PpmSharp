@@ -135,12 +135,16 @@ jobs:
     - name: Generate changelog
       id: changelog
       run: |
+        PREV_BUILD=$((GITHUB_RUN_NUMBER - 1))
+        echo "PREV_BUILD=$PREV_BUILD" >> $GITHUB_OUTPUT
         echo "CHANGELOG<<EOF" >> $GITHUB_OUTPUT
         echo "## What's Changed" >> $GITHUB_OUTPUT
         echo "" >> $GITHUB_OUTPUT
         git log --oneline -10 --pretty=format:"- %s (%h)" >> $GITHUB_OUTPUT
         echo "" >> $GITHUB_OUTPUT
         echo "EOF" >> $GITHUB_OUTPUT
+      env:
+        GITHUB_RUN_NUMBER: ${{ github.run_number }}
 
     - name: Create Release
       uses: softprops/action-gh-release@v2
@@ -192,7 +196,7 @@ jobs:
           
           ---
           
-          **Full Changelog**: https://github.com/${{ github.repository }}/compare/v1.0.${{ github.run_number - 1 }}...${{ steps.version.outputs.TAG }}
+          **Full Changelog**: https://github.com/${{ github.repository }}/compare/v1.0.${{ steps.changelog.outputs.PREV_BUILD }}...${{ steps.version.outputs.TAG }}
         files: |
           artifacts/ppmsharp-linux-x64/ppmsharp-linux-x64.tar.gz
           artifacts/ppmsharp-win-x64/ppmsharp-win-x64.zip
