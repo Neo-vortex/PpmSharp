@@ -31,7 +31,7 @@ jobs:
             artifact: ppmsharp-win-x64
             archive: zip
           - name: macOS x64
-            os: macos-latest
+            os: macos-13
             rid: osx-x64
             artifact: ppmsharp-osx-x64
             archive: tar.gz
@@ -87,14 +87,6 @@ jobs:
         mv PpmSharp ${{ matrix.artifact }}
         tar -czf ${{ matrix.artifact }}.tar.gz ${{ matrix.artifact }}
       shell: bash
-
-    - name: Prepare artifact (Windows)
-      if: matrix.archive == 'zip'
-      run: |
-        cd publish
-        move PpmSharp.exe ${{ matrix.artifact }}.exe
-        7z a -tzip ${{ matrix.artifact }}.zip ${{ matrix.artifact }}.exe
-      shell: cmd
 
     - name: Upload build artifact
       uses: actions/upload-artifact@v4
@@ -163,7 +155,6 @@ jobs:
           | Platform | Architecture | Download |
           |----------|--------------|----------|
           | 🐧 Linux | x64 | [ppmsharp-linux-x64.tar.gz](https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.TAG }}/ppmsharp-linux-x64.tar.gz) |
-          | 🪟 Windows | x64 | [ppmsharp-win-x64.zip](https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.TAG }}/ppmsharp-win-x64.zip) |
           | 🍎 macOS | x64 (Intel) | [ppmsharp-osx-x64.tar.gz](https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.TAG }}/ppmsharp-osx-x64.tar.gz) |
           | 🍎 macOS | ARM64 (M1/M2/M3) | [ppmsharp-osx-arm64.tar.gz](https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.TAG }}/ppmsharp-osx-arm64.tar.gz) |
           
@@ -181,15 +172,6 @@ jobs:
           ./ppmsharp-* image.ppm
           ```
           
-          #### Windows
-          ```powershell
-          # Extract the zip file
-          Expand-Archive ppmsharp-win-x64.zip
-          
-          # Run
-          .\ppmsharp-win-x64.exe image.ppm
-          ```
-          
           ### 📝 Changes
           
           ${{ steps.changelog.outputs.CHANGELOG }}
@@ -199,7 +181,6 @@ jobs:
           **Full Changelog**: https://github.com/${{ github.repository }}/compare/v1.0.${{ steps.changelog.outputs.PREV_BUILD }}...${{ steps.version.outputs.TAG }}
         files: |
           artifacts/ppmsharp-linux-x64/ppmsharp-linux-x64.tar.gz
-          artifacts/ppmsharp-win-x64/ppmsharp-win-x64.zip
           artifacts/ppmsharp-osx-x64/ppmsharp-osx-x64.tar.gz
           artifacts/ppmsharp-osx-arm64/ppmsharp-osx-arm64.tar.gz
         draft: false
